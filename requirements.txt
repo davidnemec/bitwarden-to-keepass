@@ -1,0 +1,1 @@
+git+git://github.com/libkeepass/pykeepass.git
