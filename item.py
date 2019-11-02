@@ -29,7 +29,7 @@ class Item:
         return self.item['login']['username'] if self.item['login']['username'] else ''
 
     def get_password(self) -> str:
-        if 'password' not in self.item:
+        if 'login' not in self.item:
             return ''
 
         return self.item['login']['password'] if self.item['login']['password'] else ''
