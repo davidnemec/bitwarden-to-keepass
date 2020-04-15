@@ -6,7 +6,7 @@ import subprocess
 from argparse import ArgumentParser
 from shlex import quote
 
-from pykeepass import PyKeePass
+from pykeepass import PyKeePass, create_database
 from pykeepass.exceptions import CredentialsIntegrityError
 
 from item import Item, Types as ItemTypes
@@ -17,6 +17,9 @@ logging.getLogger().setLevel(logging.INFO)
 def bitwarden_to_keepass(args):
     try:
         kp = PyKeePass(args.database_path, password=args.database_password, keyfile=args.database_keyfile)
+    except FileNotFoundError:
+        logging.info('KeePass database does not exist, creating a new one.')
+        kp = create_database(args.database_path, password=args.database_password, keyfile=args.database_keyfile)
     except CredentialsIntegrityError as e:
         logging.error(f'Wrong password for KeePass database: {e}')
         return
@@ -74,10 +77,6 @@ def bitwarden_to_keepass(args):
 
 
 def check_args(args):
-    if not os.path.isfile(args.database_path) or not os.access(args.database_path, os.R_OK | os.W_OK):
-        logging.error('KeePass database is not readable/writable.')
-        return False
-
     if args.database_keyfile:
         if not os.path.isfile(args.database_keyfile) or not os.access(args.database_keyfile, os.R_OK):
             logging.error('Key File for KeePass database is not readable.')
@@ -92,7 +91,7 @@ def check_args(args):
 
 parser = ArgumentParser()
 parser.add_argument('--bw-session', help='Session generated from bitwarden-cli (bw login)', required=True)
-parser.add_argument('--database-path', help='Path to KeePass database', required=True)
+parser.add_argument('--database-path', help='Path to KeePass database. If database does not exists it will be created.', required=True)
 parser.add_argument('--database-password', help='Password for KeePass database', required=True)
 parser.add_argument('--database-keyfile', help='Path to Key File for KeePass database', default=None)
 parser.add_argument('--bw-path', help='Path for bw binary', default='bw')
