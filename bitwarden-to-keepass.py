@@ -2,16 +2,16 @@ import json
 import logging
 import os
 import subprocess
-import sys
 
 from argparse import ArgumentParser
+from shlex import quote
 
 from pykeepass import PyKeePass
 from pykeepass.exceptions import CredentialsIntegrityError
 
 from item import Item, Types as ItemTypes
 
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logging.getLogger().setLevel(logging.INFO)
 
 
 def bitwarden_to_keepass(args):
@@ -21,14 +21,14 @@ def bitwarden_to_keepass(args):
         logging.error(f'Wrong password for KeePass database: {e}')
         return
 
-    folders = subprocess.check_output(f'{args.bw_path} list folders --session {args.bw_session}', shell=True, encoding='utf8')
+    folders = subprocess.check_output(f'{quote(args.bw_path)} list folders --session {quote(args.bw_session)}', shell=True, encoding='utf8')
     folders = json.loads(folders)
     groups = {}
     for folder in folders:
         groups[folder['id']] = kp.add_group(kp.root_group, folder['name'])
     logging.info(f'Folders done ({len(groups)}).')
 
-    items = subprocess.check_output(f'{args.bw_path} list items --session {args.bw_session}', shell=True, encoding='utf8')
+    items = subprocess.check_output(f'{quote(args.bw_path)} list items --session {quote(args.bw_session)}', shell=True, encoding='utf8')
     items = json.loads(items)
     logging.info(f'Starting to process {len(items)} items.')
     for item in items:
@@ -59,9 +59,12 @@ def bitwarden_to_keepass(args):
             e.set_custom_property(str(field['name']), field['value'])
 
         for attachment in bw_item.get_attachments():
-            attachment_path = subprocess.check_output(f'{args.bw_path} get attachment --raw {attachment["id"]} --itemid {bw_item.get_id()} --output "./attachment_tmp/{attachment["fileName"]}" --session {args.bw_session}', shell=True, encoding='utf8').rstrip()
-            attachment_content = open(attachment_path, 'rb').read()
-            attachment_id = kp.add_binary(attachment_content)
+            attachment_tmp_path = f'./attachment_tmp/{attachment["fileName"]}'
+            attachment_path = subprocess.check_output(f'{quote(args.bw_path)} get attachment'
+                                                      f' --raw {quote(attachment["id"])} '
+                                                      f'--itemid {quote(bw_item.get_id())} '
+                                                      f'--output {quote(attachment_tmp_path)} --session {quote(args.bw_session)}', shell=True, encoding='utf8').rstrip()
+            attachment_id = kp.add_binary(open(attachment_path, 'rb').read())
             e.add_attachment(attachment_id, attachment['fileName'])
             os.remove(attachment_path)
 
