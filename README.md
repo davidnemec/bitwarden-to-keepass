@@ -12,7 +12,7 @@ make build
 ```
 
 ## Run/usage
-- First you will need to **create new (empty) KeePass database** (tested with [KeePassXC](https://github.com/keepassxreboot/keepassxc) but it will probably work with others)
+- You can either **create new (empty) KeePass database** (tested with [KeePassXC](https://github.com/keepassxreboot/keepassxc) but it will probably work with others) right now, otherwise one will be created when the script is executed
 - Go into the virtual environment
 ```
 source .venv/bin/activate

@@ -7,7 +7,7 @@ from argparse import ArgumentParser
 from shlex import quote
 
 from pykeepass import PyKeePass, create_database
-from pykeepass.exceptions import CredentialsIntegrityError
+from pykeepass.exceptions import CredentialsError
 
 from item import Item, Types as ItemTypes
 
@@ -20,7 +20,7 @@ def bitwarden_to_keepass(args):
     except FileNotFoundError:
         logging.info('KeePass database does not exist, creating a new one.')
         kp = create_database(args.database_path, password=args.database_password, keyfile=args.database_keyfile)
-    except CredentialsIntegrityError as e:
+    except CredentialsError as e:
         logging.error(f'Wrong password for KeePass database: {e}')
         return
 
