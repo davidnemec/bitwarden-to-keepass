@@ -72,7 +72,7 @@ def bitwarden_to_keepass(args):
             entry.set_custom_property(str(field['name']), field['value'])
 
         for attachment in bw_item.get_attachments():
-            attachment_tmp_path = f'./attachment_tmp/{attachment["fileName"]}'
+            attachment_tmp_path = f'/tmp/attachment/{attachment["fileName"]}'
             attachment_path = subprocess.check_output(f'{quote(args.bw_path)} get attachment'
                                                       f' --raw {quote(attachment["id"])} '
                                                       f'--itemid {quote(bw_item.get_id())} '
@@ -99,12 +99,39 @@ def check_args(args):
     return True
 
 
+def environ_or_required(key):
+    return (
+        {'default': os.environ.get(key)} if os.environ.get(key)
+        else {'required': True}
+    )
+
+
 parser = ArgumentParser()
-parser.add_argument('--bw-session', help='Session generated from bitwarden-cli (bw login)', required=True)
-parser.add_argument('--database-path', help='Path to KeePass database. If database does not exists it will be created.', required=True)
-parser.add_argument('--database-password', help='Password for KeePass database', required=True)
-parser.add_argument('--database-keyfile', help='Path to Key File for KeePass database', default=None)
-parser.add_argument('--bw-path', help='Path for bw binary', default='bw')
+parser.add_argument(
+    '--bw-session',
+    help='Session generated from bitwarden-cli (bw login)',
+    **environ_or_required('BW_SESSION'),
+)
+parser.add_argument(
+    '--database-path',
+    help='Path to KeePass database. If database does not exists it will be created.',
+    **environ_or_required('DATABASE_PATH'),
+)
+parser.add_argument(
+    '--database-password',
+    help='Password for KeePass database',
+    **environ_or_required('DATABASE_PASSWORD'),
+)
+parser.add_argument(
+    '--database-keyfile',
+    help='Path to Key File for KeePass database',
+    default=os.environ.get('DATABASE_KEYFILE', None),
+)
+parser.add_argument(
+    '--bw-path',
+    help='Path for bw binary',
+    default=os.environ.get('BW_PATH', 'bw'),
+)
 args = parser.parse_args()
 
 check_args(args) and bitwarden_to_keepass(args)
