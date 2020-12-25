@@ -41,25 +41,35 @@ def bitwarden_to_keepass(args):
 
         bw_item = Item(item)
 
-        e = kp.add_entry(
-            groups[bw_item.get_folder_id()],
-            title=bw_item.get_name(),
-            username=bw_item.get_username(),
-            password=bw_item.get_password(),
-            notes=bw_item.get_notes()
-        )
+        is_duplicate_title = False
+        while True:
+            entry_title = bw_item.get_name() if not is_duplicate_title else '{name} - ({item_id}'.format(name=bw_item.get_name(), item_id=bw_item.get_id())
+            try:
+                entry = kp.add_entry(
+                    destination_group=groups[bw_item.get_folder_id()],
+                    title=entry_title,
+                    username=bw_item.get_username(),
+                    password=bw_item.get_password(),
+                    notes=bw_item.get_notes()
+                )
+                break
+            except Exception as e:
+                if 'already exists' in str(e):
+                    is_duplicate_title = True
+                    continue
+                raise e
 
         totp_secret, totp_settings = bw_item.get_totp()
         if totp_secret and totp_settings:
-            e.set_custom_property('TOTP Seed', totp_secret)
-            e.set_custom_property('TOTP Settings', totp_settings)
+            entry.set_custom_property('TOTP Seed', totp_secret)
+            entry.set_custom_property('TOTP Settings', totp_settings)
 
         for uri in bw_item.get_uris():
-            e.url = uri['uri']
+            entry.url = uri['uri']
             break # todo append additional uris to notes?
 
         for field in bw_item.get_custom_fields():
-            e.set_custom_property(str(field['name']), field['value'])
+            entry.set_custom_property(str(field['name']), field['value'])
 
         for attachment in bw_item.get_attachments():
             attachment_tmp_path = f'./attachment_tmp/{attachment["fileName"]}'
@@ -68,7 +78,7 @@ def bitwarden_to_keepass(args):
                                                       f'--itemid {quote(bw_item.get_id())} '
                                                       f'--output {quote(attachment_tmp_path)} --session {quote(args.bw_session)}', shell=True, encoding='utf8').rstrip()
             attachment_id = kp.add_binary(open(attachment_path, 'rb').read())
-            e.add_attachment(attachment_id, attachment['fileName'])
+            entry.add_attachment(attachment_id, attachment['fileName'])
             os.remove(attachment_path)
 
     logging.info('Saving changes to KeePass database.')
