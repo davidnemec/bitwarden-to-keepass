@@ -47,6 +47,10 @@ class Item:
         if 'fields' not in self.item:
             return []
 
+        for field in self.item['fields']:
+            field['name'] = field['name'] if field['name'] is not None else ''
+            field['value'] = field['value'] if field['value'] is not None else ''
+
         return self.item['fields']
 
     def get_attachments(self):

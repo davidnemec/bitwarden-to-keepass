@@ -69,7 +69,7 @@ def bitwarden_to_keepass(args):
             break # todo append additional uris to notes?
 
         for field in bw_item.get_custom_fields():
-            entry.set_custom_property(str(field['name']), field['value'])
+            entry.set_custom_property(field['name'], field['value'])
 
         for attachment in bw_item.get_attachments():
             attachment_tmp_path = f'/tmp/attachment/{attachment["fileName"]}'
