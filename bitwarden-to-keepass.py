@@ -61,7 +61,9 @@ def bitwarden_to_keepass(args):
                 if 'already exists' in str(e):
                     is_duplicate_title = True
                     continue
-                raise e
+
+                logging.warning(f'Skipping item named "{item["name"]}" because of this error: {repr(e)}')
+                break
 
         totp_secret, totp_settings = bw_item.get_totp()
         if totp_secret and totp_settings:
