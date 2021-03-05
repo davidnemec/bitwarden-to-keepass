@@ -11,7 +11,11 @@ from pykeepass.exceptions import CredentialsError
 
 from item import Item, Types as ItemTypes
 
-logging.getLogger().setLevel(logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s :: %(levelname)s :: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+)
 
 
 def bitwarden_to_keepass(args):
