@@ -39,8 +39,8 @@ def bitwarden_to_keepass(args):
     items = json.loads(items)
     logging.info(f'Starting to process {len(items)} items.')
     for item in items:
-        if item['type'] == ItemTypes.CARD:
-            logging.warning(f'Skipping credit card item "{item["name"]}".')
+        if item['type'] in [ItemTypes.CARD, ItemTypes.IDENTITY]:
+            logging.warning(f'Skipping credit card or identity item "{item["name"]}".')
             continue
 
         bw_item = Item(item)
