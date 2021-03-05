@@ -47,6 +47,7 @@ def bitwarden_to_keepass(args):
 
         is_duplicate_title = False
         while True:
+            entry = None
             entry_title = bw_item.get_name() if not is_duplicate_title else '{name} - ({item_id}'.format(name=bw_item.get_name(), item_id=bw_item.get_id())
             try:
                 entry = kp.add_entry(
@@ -64,6 +65,9 @@ def bitwarden_to_keepass(args):
 
                 logging.warning(f'Skipping item named "{item["name"]}" because of this error: {repr(e)}')
                 break
+
+        if not entry:
+            continue
 
         totp_secret, totp_settings = bw_item.get_totp()
         if totp_secret and totp_settings:
