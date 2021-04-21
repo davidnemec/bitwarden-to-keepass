@@ -41,6 +41,9 @@ class Item:
         if 'login' not in self.item or 'uris' not in self.item['login']:
             return []
 
+        for uri in self.item['login']['uris']:
+            uri['uri'] = uri['uri'] if uri['uri'] is not None else ''
+
         return self.item['login']['uris']
 
     def get_custom_fields(self):

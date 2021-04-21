@@ -46,50 +46,49 @@ def bitwarden_to_keepass(args):
         bw_item = Item(item)
 
         is_duplicate_title = False
-        while True:
-            entry = None
-            entry_title = bw_item.get_name() if not is_duplicate_title else '{name} - ({item_id}'.format(name=bw_item.get_name(), item_id=bw_item.get_id())
-            try:
-                entry = kp.add_entry(
-                    destination_group=groups[bw_item.get_folder_id()],
-                    title=entry_title,
-                    username=bw_item.get_username(),
-                    password=bw_item.get_password(),
-                    notes=bw_item.get_notes()
-                )
-                break
-            except Exception as e:
-                if 'already exists' in str(e):
-                    is_duplicate_title = True
-                    continue
+        try:
+            while True:
+                entry_title = bw_item.get_name() if not is_duplicate_title else '{name} - ({item_id}'.format(name=bw_item.get_name(), item_id=bw_item.get_id())
+                try:
+                    entry = kp.add_entry(
+                        destination_group=groups[bw_item.get_folder_id()],
+                        title=entry_title,
+                        username=bw_item.get_username(),
+                        password=bw_item.get_password(),
+                        notes=bw_item.get_notes()
+                    )
+                    break
+                except Exception as e:
+                    if 'already exists' in str(e):
+                        is_duplicate_title = True
+                        continue
+                    raise
 
-                logging.warning(f'Skipping item named "{item["name"]}" because of this error: {repr(e)}')
-                break
+            totp_secret, totp_settings = bw_item.get_totp()
+            if totp_secret and totp_settings:
+                entry.set_custom_property('TOTP Seed', totp_secret)
+                entry.set_custom_property('TOTP Settings', totp_settings)
 
-        if not entry:
+            for uri in bw_item.get_uris():
+                entry.url = uri['uri']
+                break # todo append additional uris to notes?
+
+            for field in bw_item.get_custom_fields():
+                entry.set_custom_property(field['name'], field['value'])
+
+            for attachment in bw_item.get_attachments():
+                attachment_tmp_path = f'/tmp/attachment/{attachment["fileName"]}'
+                attachment_path = subprocess.check_output(f'{quote(args.bw_path)} get attachment'
+                                                          f' --raw {quote(attachment["id"])} '
+                                                          f'--itemid {quote(bw_item.get_id())} '
+                                                          f'--output {quote(attachment_tmp_path)} --session {quote(args.bw_session)}', shell=True, encoding='utf8').rstrip()
+                attachment_id = kp.add_binary(open(attachment_path, 'rb').read())
+                entry.add_attachment(attachment_id, attachment['fileName'])
+                os.remove(attachment_path)
+
+        except Exception as e:
+            logging.warning(f'Skipping item named "{item["name"]}" because of this error: {repr(e)}')
             continue
-
-        totp_secret, totp_settings = bw_item.get_totp()
-        if totp_secret and totp_settings:
-            entry.set_custom_property('TOTP Seed', totp_secret)
-            entry.set_custom_property('TOTP Settings', totp_settings)
-
-        for uri in bw_item.get_uris():
-            entry.url = uri['uri']
-            break # todo append additional uris to notes?
-
-        for field in bw_item.get_custom_fields():
-            entry.set_custom_property(field['name'], field['value'])
-
-        for attachment in bw_item.get_attachments():
-            attachment_tmp_path = f'/tmp/attachment/{attachment["fileName"]}'
-            attachment_path = subprocess.check_output(f'{quote(args.bw_path)} get attachment'
-                                                      f' --raw {quote(attachment["id"])} '
-                                                      f'--itemid {quote(bw_item.get_id())} '
-                                                      f'--output {quote(attachment_tmp_path)} --session {quote(args.bw_session)}', shell=True, encoding='utf8').rstrip()
-            attachment_id = kp.add_binary(open(attachment_path, 'rb').read())
-            entry.add_attachment(attachment_id, attachment['fileName'])
-            os.remove(attachment_path)
 
     logging.info('Saving changes to KeePass database.')
     kp.save()
