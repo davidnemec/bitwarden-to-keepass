@@ -1,1 +1,1 @@
-pykeepass~=3.2
+pykeepass~=4.0
