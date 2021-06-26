@@ -30,10 +30,30 @@ def bitwarden_to_keepass(args):
 
     folders = subprocess.check_output(f'{quote(args.bw_path)} list folders --session {quote(args.bw_session)}', shell=True, encoding='utf8')
     folders = json.loads(folders)
-    groups = {}
+    # sort folders so that in the case of nested folders, the parents would be guaranteed to show up before the children
+    folders.sort(key=lambda x: x['name'])
+    groups_by_id = {}
+    groups_by_name = {}
     for folder in folders:
-        groups[folder['id']] = kp.add_group(kp.root_group, folder['name'])
-    logging.info(f'Folders done ({len(groups)}).')
+        # entries not associated with a folder should go under the root group
+        if folder['id'] is None:
+            groups_by_id[folder['id']] = kp.root_group
+            continue
+
+        parent_group = kp.root_group
+        target_name = folder['name']
+
+        # check if this is a nested folder; set appropriate parent group if so
+        folder_path_split = target_name.rsplit('/', maxsplit=1)
+        if len(folder_path_split) > 1:
+            parent_group = groups_by_name[folder_path_split[0]]
+            target_name = folder_path_split[1]
+
+        new_group = kp.add_group(parent_group, target_name)
+
+        groups_by_id[folder['id']] = new_group
+        groups_by_name[folder['name']] = new_group
+    logging.info(f'Folders done ({len(groups_by_id)}).')
 
     items = subprocess.check_output(f'{quote(args.bw_path)} list items --session {quote(args.bw_session)}', shell=True, encoding='utf8')
     items = json.loads(items)
@@ -51,7 +71,7 @@ def bitwarden_to_keepass(args):
                 entry_title = bw_item.get_name() if not is_duplicate_title else '{name} - ({item_id}'.format(name=bw_item.get_name(), item_id=bw_item.get_id())
                 try:
                     entry = kp.add_entry(
-                        destination_group=groups[bw_item.get_folder_id()],
+                        destination_group=groups_by_id[bw_item.get_folder_id()],
                         title=entry_title,
                         username=bw_item.get_username(),
                         password=bw_item.get_password(),
