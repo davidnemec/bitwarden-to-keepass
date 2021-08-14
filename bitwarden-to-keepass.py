@@ -1,14 +1,18 @@
 import json
 import logging
 import os
+import re
 import subprocess
 
 from argparse import ArgumentParser
+from typing import Dict, List, Optional
 from shlex import quote
 
 from pykeepass import PyKeePass, create_database
 from pykeepass.exceptions import CredentialsError
+from pykeepass.group import Group as KPGroup
 
+import folder as FolderType
 from item import Item, Types as ItemTypes
 
 logging.basicConfig(
@@ -17,8 +21,10 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S',
 )
 
+kp: Optional[PyKeePass] = None
 
 def bitwarden_to_keepass(args):
+    global kp
     try:
         kp = PyKeePass(args.database_path, password=args.database_password, keyfile=args.database_keyfile)
     except FileNotFoundError:
@@ -30,29 +36,7 @@ def bitwarden_to_keepass(args):
 
     folders = subprocess.check_output(f'{quote(args.bw_path)} list folders --session {quote(args.bw_session)}', shell=True, encoding='utf8')
     folders = json.loads(folders)
-    # sort folders so that in the case of nested folders, the parents would be guaranteed to show up before the children
-    folders.sort(key=lambda x: x['name'])
-    groups_by_id = {}
-    groups_by_name = {}
-    for folder in folders:
-        # entries not associated with a folder should go under the root group
-        if folder['id'] is None:
-            groups_by_id[folder['id']] = kp.root_group
-            continue
-
-        parent_group = kp.root_group
-        target_name = folder['name']
-
-        # check if this is a nested folder; set appropriate parent group if so
-        folder_path_split = target_name.rsplit('/', maxsplit=1)
-        if len(folder_path_split) > 1:
-            parent_group = groups_by_name[folder_path_split[0]]
-            target_name = folder_path_split[1]
-
-        new_group = kp.add_group(parent_group, target_name)
-
-        groups_by_id[folder['id']] = new_group
-        groups_by_name[folder['name']] = new_group
+    groups_by_id = load_folders(folders)
     logging.info(f'Folders done ({len(groups_by_id)}).')
 
     items = subprocess.check_output(f'{quote(args.bw_path)} list items --session {quote(args.bw_session)}', shell=True, encoding='utf8')
@@ -114,6 +98,35 @@ def bitwarden_to_keepass(args):
     kp.save()
     logging.info('Export completed.')
 
+def load_folders(folders) -> Dict[str, KPGroup]:
+    # sort folders so that in the case of nested folders, the parents would be guaranteed to show up before the children
+    folders.sort(key=lambda x: x['name'])
+
+    # dict to store mapping of Bitwarden folder id to keepass group
+    groups_by_id: Dict[str, KPGroup] = {}
+
+    # build up folder tree
+    folder_root: FolderType.Folder = FolderType.Folder(None)
+    folder_root.keepass_group = kp.root_group
+    groups_by_id[None] = kp.root_group
+
+    for folder in folders:
+        if folder['id'] is not None:
+            new_folder: FolderType.Folder = FolderType.Folder(folder['id'])
+            # regex lifted from https://github.com/bitwarden/jslib/blob/ecdd08624f61ccff8128b7cb3241f39e664e1c7f/common/src/services/folder.service.ts#L108
+            folder_name_parts: List[str] = re.sub(r'^\/+|\/+$', '', folder['name']).split('/')
+            FolderType.nested_traverse_insert(folder_root, folder_name_parts, new_folder, '/')
+
+    # create keepass groups based off folder tree
+    def add_keepass_group(folder: FolderType.Folder):
+        parent_group: KPGroup = folder.parent.keepass_group
+        new_group: KPGroup = kp.add_group(parent_group, folder.name)
+        folder.keepass_group = new_group
+        groups_by_id[folder.id] = new_group
+
+    FolderType.bfs_traverse_execute(folder_root, add_keepass_group)
+
+    return groups_by_id
 
 def check_args(args):
     if args.database_keyfile:
