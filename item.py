@@ -46,6 +46,98 @@ class Item:
 
         return self.item['login']['uris']
 
+    def get_card_fields(self):
+        if 'card' not in self.item:
+            return []
+
+        old_items = self.item["card"]
+        items = dict()
+
+        if old_items["cardholderName"] is not None:
+            items["Cardholder Name"] = old_items["cardholderName"]
+        if old_items["brand"] is not None:
+            items["Brand Name"] = old_items["brand"]
+        if old_items["number"] is not None:
+            items["Number"] = old_items["number"]
+        if old_items["expMonth"] is not None:
+            items["Expiration Month"] = old_items["expMonth"]
+        if old_items["expYear"] is not None:
+            items["Expiration Year"] = old_items["expYear"]
+        if old_items["code"] is not None:
+            items["Code"] = old_items["code"]
+
+        return items
+
+    def get_identity_fields(self):
+        if 'identity' not in self.item:
+            return []
+
+        old_items = self.item["identity"]
+        items = dict()
+
+        temp = ""
+        found = False
+
+        # format Identity name as firstName middleName lastName
+        for i in ["title", "firstName", "middleName", "lastName"]:
+            if old_items[i] is not None:
+                if found:
+                    temp = " ".join([temp, old_items[i]])
+                else:
+                    found = True
+                    temp = "".join([temp, old_items[i]])
+        if temp != "":
+            items["Identity name"] = temp
+
+        if old_items["username"] is not None:
+            items["Identity username"] = old_items["username"]
+
+        if old_items["company"] is not None:
+            items["Company"] = old_items["company"]
+
+        if old_items["ssn"] is not None:
+            items["National Insurance number"] = old_items["ssn"]
+
+        if old_items["passportNumber"] is not None:
+            items["Passport number"] = old_items["passportNumber"]
+
+        if old_items["licenseNumber"] is not None:
+            items["License number"] = old_items["licenseNumber"]
+
+        if old_items["email"] is not None:
+            items["Email"] = old_items["email"]
+
+        if old_items["phone"] is not None:
+            items["Phone"] = old_items["phone"]
+
+        # form address string in below format
+        # address1
+        # address2
+        # address3
+        # city, state, postalCode
+        # country
+        temp, found = "", False
+        for i in ["address1", "address2", "address3"]:
+            if found:
+                temp = "\n".join([temp, old_items[i]])
+            else:
+                found = True
+                temp = "".join([temp, old_items[i]])
+
+        found = False
+        for i in ["city", "state", "postalCode"]:
+            if found:
+                temp = ", ".join([temp, old_items[i]])
+            else:
+                found = True
+                temp = "\n".join([temp, old_items[i]])
+
+        if old_items["country"] is not None:
+            temp = "\n".join([temp, old_items["country"]])
+        if temp != "":
+            items["Address"] = temp
+
+        return items
     def get_custom_fields(self):
         if 'fields' not in self.item:
             return []

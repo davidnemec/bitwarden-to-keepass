@@ -43,10 +43,6 @@ def bitwarden_to_keepass(args):
     items = json.loads(items)
     logging.info(f'Starting to process {len(items)} items.')
     for item in items:
-        if item['type'] in [ItemTypes.CARD, ItemTypes.IDENTITY]:
-            logging.warning(f'Skipping credit card or identity item "{item["name"]}".')
-            continue
-
         bw_item = Item(item)
 
         is_duplicate_title = False
@@ -76,6 +72,14 @@ def bitwarden_to_keepass(args):
             for uri in bw_item.get_uris():
                 entry.url = uri['uri']
                 break # todo append additional uris to notes?
+            if item["type"] in [ItemTypes.CARD]:
+                for card_item in bw_item.get_card_fields():
+                    entry.set_custom_property(card_item, bw_item.get_card_fields()[card_item])
+
+            if item["type"] in [ItemTypes.IDENTITY]:
+                for identity_item in bw_item.get_identity_fields():
+                    entry.set_custom_property(identity_item, bw_item.get_identity_fields()[identity_item])
+
 
             for field in bw_item.get_custom_fields():
                 entry.set_custom_property(field['name'], field['value'])
