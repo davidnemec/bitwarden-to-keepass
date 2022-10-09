@@ -10,6 +10,7 @@ from typing import Dict, List, Optional
 from pykeepass import PyKeePass, create_database
 from pykeepass.exceptions import CredentialsError
 from pykeepass.group import Group as KPGroup
+from pykeepass.entry import Entry as KPEntry
 
 import folder as FolderType
 from item import Item, Types as ItemTypes
@@ -72,9 +73,8 @@ def bitwarden_to_keepass(args):
                 entry.set_custom_property('TOTP Seed', totp_secret)
                 entry.set_custom_property('TOTP Settings', totp_settings)
 
-            for uri in bw_item.get_uris():
-                entry.url = uri['uri']
-                break # todo append additional uris to notes?
+            uris = [uri['uri'] for uri in bw_item.get_uris()]
+            set_kp_entry_urls(entry, uris)
 
             for field in bw_item.get_custom_fields():
                 entry.set_custom_property(field['name'], field['value'])
@@ -94,6 +94,36 @@ def bitwarden_to_keepass(args):
     logging.info('Saving changes to KeePass database.')
     kp.save()
     logging.info('Export completed.')
+
+
+def set_kp_entry_urls(entry: KPEntry, urls: List[str]) -> None:
+    """Store a list of URLs comming from a Bitwarden entry in different
+    attributes and custom properties of a KeePass entry, depending on whether
+    it's an identifier for an Android or iOS app or it's a generic URL"""
+    android_apps = ios_apps = extra_urls = 0
+
+    for url in urls:
+        match url.partition('://'):
+            case ('androidapp', '://', app_id):
+                # It's an Android app registered by Bitwarden's mobile app
+                # Store multiple apps in AndroidApp, AndroidApp_1, etc. so that KeePassDX's autofill picks it up
+                prop_name = "AndroidApp" if android_apps == 0 else f"AndroidApp_{android_apps}"
+                android_apps += 1
+                entry.set_custom_property(prop_name, app_id)
+            case ('iosapp', '://', app_id):
+                # It's an iOS app registered by Bitwarden's mobile app
+                # XXX Maybe properly set up autofill for a macOS/iPhone/iPad KeePass-compatible app like StrongBox or Keepassium
+                ios_apps += 1
+                entry.set_custom_property(f'iOS app #{ios_apps}', app_id)
+            case _:
+                # Assume it's a generic URL.
+                # First one goes to the standard URL attribute and the remaining ones go to URL_1, URL_2 and so on
+                if entry.url is None:
+                    entry.url = url
+                else:
+                    extra_urls += 1
+                    entry.set_custom_property(f'URL_{extra_urls}', url)
+
 
 def load_folders(folders) -> Dict[str, KPGroup]:
     # sort folders so that in the case of nested folders, the parents would be guaranteed to show up before the children
