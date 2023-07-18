@@ -1,4 +1,4 @@
-FROM python:3.10-slim-bullseye
+FROM python:3.11-slim-bookworm
 
 RUN apt update && apt install -y npm && \
     npm i -g @bitwarden/cli && \
