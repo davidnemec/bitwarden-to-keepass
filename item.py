@@ -2,12 +2,16 @@ from enum import IntEnum
 from urllib.parse import urlsplit, parse_qsl
 
 
-class Types(IntEnum):
+class ItemType(IntEnum):
     LOGIN = 1
     SECURE_NOTE = 2
     CARD = 3
     IDENTITY = 4
 
+class CustomFieldType(IntEnum):
+    TEXT = 0
+    HIDDEN = 1
+    BOOLEAN = 2
 
 class Item:
     def __init__(self, item):
@@ -53,6 +57,7 @@ class Item:
         for field in self.item['fields']:
             field['name'] = field['name'] if field['name'] is not None else ''
             field['value'] = field['value'] if field['value'] is not None else ''
+            field['type'] = CustomFieldType(field['type'])
 
         return self.item['fields']
 

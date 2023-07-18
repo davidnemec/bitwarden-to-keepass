@@ -13,7 +13,7 @@ from pykeepass.group import Group as KPGroup
 from pykeepass.entry import Entry as KPEntry
 
 import folder as FolderType
-from item import Item, Types as ItemTypes
+from item import Item, ItemType, CustomFieldType
 
 logging.basicConfig(
     level=logging.INFO,
@@ -43,7 +43,7 @@ def bitwarden_to_keepass(args):
     items = json.loads(items)
     logging.info(f'Starting to process {len(items)} items.')
     for item in items:
-        if item['type'] in [ItemTypes.CARD, ItemTypes.IDENTITY]:
+        if item['type'] in [ItemType.CARD, ItemType.IDENTITY]:
             logging.warning(f'Skipping credit card or identity item "{item["name"]}".')
             continue
 
@@ -70,14 +70,18 @@ def bitwarden_to_keepass(args):
 
             totp_secret, totp_settings = bw_item.get_totp()
             if totp_secret and totp_settings:
-                entry.set_custom_property('TOTP Seed', totp_secret)
+                entry.set_custom_property('TOTP Seed', totp_secret, protect=True)
                 entry.set_custom_property('TOTP Settings', totp_settings)
 
             uris = [uri['uri'] for uri in bw_item.get_uris()]
             set_kp_entry_urls(entry, uris)
 
             for field in bw_item.get_custom_fields():
-                entry.set_custom_property(field['name'], field['value'])
+                entry.set_custom_property(
+                    field['name'],
+                    field['value'],
+                    protect=field['type'] == CustomFieldType.HIDDEN,
+                )
 
             for attachment in bw_item.get_attachments():
                 attachment_raw = subprocess.check_output([
