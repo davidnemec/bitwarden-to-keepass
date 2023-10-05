@@ -31,3 +31,11 @@ source .venv/bin/activate
 ```
 python3 bitwarden-to-keepass.py --bw-session BW_SESSION --database-path DATABASE_PATH --database-password DATABASE_PASSWORD [--database-keyfile DATABASE_KEYFILE] [--bw-path BW_PATH]
 ```
+
+## Running on Windows (PowerShell script)
+
+- Clone this repository
+- Make sure you have Python 3 installed
+- Download [bitwarden-cli](https://bitwarden.com/help/article/cli/) and extract to the sub-folder `bitwardencli/bw.exe`
+- Optional: Edit `bitwarden-to-keepass.ps1` and confiugure paths, passwords and key-files (`.env`settings are not used)
+- Run `bitwarden-to-keepass.ps1`
