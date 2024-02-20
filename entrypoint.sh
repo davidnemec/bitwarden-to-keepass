@@ -38,7 +38,7 @@ echo "Generating KeePass file $DATABASE_PATH"
 python3 bitwarden-to-keepass.py || { echo "Failed to convert to KeePass"; exit 1; }
 bw lock
 
-echo "KeePass file $DATABASE_PATH generated successfully"
-
 # Log out of Bitwarden
 bw logout
+
+echo "KeePass file $DATABASE_PATH generated successfully"

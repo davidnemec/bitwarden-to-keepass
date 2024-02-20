@@ -72,8 +72,8 @@ In the end, the script will lock your vault and log out of your account:
 
 ``` sh
 Your vault is locked.
-KeePass file /exports/my-cool-bitwarden-backup.kdbx generated successfully
 You have logged out.
+KeePass file /exports/my-cool-bitwarden-backup.kdbx generated successfully
 ```
 
 And you can find your file in your mounted directory!
