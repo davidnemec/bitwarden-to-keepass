@@ -1,11 +1,17 @@
-FROM tangowithfoxtrot/bw-cli as builder
-
 FROM python:3.11.0-slim-bullseye
 
-COPY --from=builder /usr/local/bin/bw /bin/bw
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends wget unzip && \
+    wget -O "bw.zip" "https://vault.bitwarden.com/download/?app=cli&platform=linux" && \
+    unzip bw.zip && \
+    chmod +x ./bw && \
+    mv ./bw /usr/local/bin/bw && \
+    apt-get purge -y --auto-remove wget unzip && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    rm -rf bw.zip
 
 WORKDIR /bitwarden-to-keepass
-
 COPY . .
 
 RUN pip install --no-cache-dir --upgrade pip && \
