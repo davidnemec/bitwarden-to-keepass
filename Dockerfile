@@ -1,6 +1,7 @@
 FROM python:3.11.0-slim-bullseye
 
 RUN apt-get update && \
+    apt-get upgrade -y && \
     apt-get install -y --no-install-recommends wget unzip && \
     wget -O "bw.zip" "https://vault.bitwarden.com/download/?app=cli&platform=linux" && \
     unzip bw.zip && \
