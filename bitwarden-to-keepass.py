@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import subprocess
+from datetime import datetime
 
 from argparse import ArgumentParser
 from typing import Dict, List, Optional
@@ -21,25 +22,29 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S',
 )
 
+NOW = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+DATABASE_PATH = f"/exports/vaultwarden-{NOW}.kdbx"
+BW_PATH = "/usr/local/bin/bw"
+
 kp: Optional[PyKeePass] = None
 
 def bitwarden_to_keepass(args):
     global kp
     try:
-        kp = PyKeePass(args.database_path, password=args.database_password, keyfile=args.database_keyfile)
+        kp = PyKeePass(DATABASE_PATH, password=args.database_password, keyfile=args.database_keyfile)
     except FileNotFoundError:
         logging.info('KeePass database does not exist, creating a new one.')
-        kp = create_database(args.database_path, password=args.database_password, keyfile=args.database_keyfile)
+        kp = create_database(DATABASE_PATH, password=args.database_password, keyfile=args.database_keyfile)
     except CredentialsError as e:
         logging.error(f'Wrong password for KeePass database: {e}')
         return
 
-    folders = subprocess.check_output([args.bw_path, 'list', 'folders', '--session', args.bw_session], encoding='utf8')
+    folders = subprocess.check_output([BW_PATH, 'list', 'folders', '--session', args.bw_session], encoding='utf8')
     folders = json.loads(folders)
     groups_by_id = load_folders(folders)
     logging.info(f'Folders done ({len(groups_by_id)}).')
 
-    items = subprocess.check_output([args.bw_path, 'list', 'items', '--session', args.bw_session], encoding='utf8')
+    items = subprocess.check_output([BW_PATH, 'list', 'items', '--session', args.bw_session], encoding='utf8')
     items = json.loads(items)
     logging.info(f'Starting to process {len(items)} items.')
     for item in items:
@@ -85,7 +90,7 @@ def bitwarden_to_keepass(args):
 
             for attachment in bw_item.get_attachments():
                 attachment_raw = subprocess.check_output([
-                    args.bw_path, 'get', 'attachment', attachment['id'], '--raw', '--itemid', bw_item.get_id(),
+                    BW_PATH, 'get', 'attachment', attachment['id'], '--raw', '--itemid', bw_item.get_id(),
                     '--session', args.bw_session,
                 ])
                 attachment_id = kp.add_binary(attachment_raw)
@@ -166,8 +171,8 @@ def check_args(args):
             logging.error('Key File for KeePass database is not readable.')
             return False
 
-    if not os.path.isfile(args.bw_path) or not os.access(args.bw_path, os.X_OK):
-        logging.error('bitwarden-cli was not found or not executable. Did you set correct \'--bw-path\'?')
+    if not os.path.isfile(BW_PATH) or not os.access(BW_PATH, os.X_OK):
+        logging.error('bitwarden-cli was not found or not executable. Make sure bw-cli is installed and in PATH.')
         return False
 
     return True
@@ -187,11 +192,6 @@ parser.add_argument(
     **environ_or_required('BW_SESSION'),
 )
 parser.add_argument(
-    '--database-path',
-    help='Path to KeePass database. If database does not exists it will be created.',
-    **environ_or_required('DATABASE_PATH'),
-)
-parser.add_argument(
     '--database-password',
     help='Password for KeePass database',
     **environ_or_required('DATABASE_PASSWORD'),
@@ -200,11 +200,6 @@ parser.add_argument(
     '--database-keyfile',
     help='Path to Key File for KeePass database',
     default=os.environ.get('DATABASE_KEYFILE', None),
-)
-parser.add_argument(
-    '--bw-path',
-    help='Path for bw binary',
-    default=os.environ.get('BW_PATH', 'bw'),
 )
 args = parser.parse_args()
 

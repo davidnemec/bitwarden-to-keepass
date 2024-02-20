@@ -12,7 +12,11 @@ RUN apt-get update && \
     rm -rf bw.zip
 
 WORKDIR /bitwarden-to-keepass
-COPY . .
+COPY requirements.txt ./
 
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+CMD ["./entrypoint.sh"]
