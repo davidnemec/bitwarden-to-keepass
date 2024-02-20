@@ -1,12 +1,18 @@
 #!/bin/sh
 
+# Login to a VaultWarden instance
+echo "Connecting to Vaultwarden instance at $VAULTWARDEN_URL"
+bw config server "$VAULTWARDEN_URL"
+BW_SESSION="$(bw login --raw)"
+export BW_SESSION
 
-bw config server http://192.168.0.186:9998
+# Set environment variables for the script
+BW_PATH="$(which bw)"
+export BW_PATH
 
-export BW_SESSION="$(bw login --raw)"
-
+# Convert the VaultWarden data to a KeePass file
 bw sync
-
 python3 bitwarden-to-keepass.py
-
 bw lock
+
+echo "KeePass file created successfully!"

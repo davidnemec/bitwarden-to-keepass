@@ -22,11 +22,11 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S',
 )
 
-NOW = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-DATABASE_PATH = f"/exports/vaultwarden-{NOW}.kdbx"
-BW_PATH = "/usr/local/bin/bw"
-
 kp: Optional[PyKeePass] = None
+
+NOW = datetime.now().strftime('%Y-%m-%d-%s')
+DATABASE_PATH = f'/exports/vaultwarden-{NOW}.kdbx'
+
 
 def bitwarden_to_keepass(args):
     global kp
@@ -39,12 +39,12 @@ def bitwarden_to_keepass(args):
         logging.error(f'Wrong password for KeePass database: {e}')
         return
 
-    folders = subprocess.check_output([BW_PATH, 'list', 'folders', '--session', args.bw_session], encoding='utf8')
+    folders = subprocess.check_output([args.bw_path, 'list', 'folders', '--session', args.bw_session], encoding='utf8')
     folders = json.loads(folders)
     groups_by_id = load_folders(folders)
     logging.info(f'Folders done ({len(groups_by_id)}).')
 
-    items = subprocess.check_output([BW_PATH, 'list', 'items', '--session', args.bw_session], encoding='utf8')
+    items = subprocess.check_output([args.bw_path, 'list', 'items', '--session', args.bw_session], encoding='utf8')
     items = json.loads(items)
     logging.info(f'Starting to process {len(items)} items.')
     for item in items:
@@ -90,7 +90,7 @@ def bitwarden_to_keepass(args):
 
             for attachment in bw_item.get_attachments():
                 attachment_raw = subprocess.check_output([
-                    BW_PATH, 'get', 'attachment', attachment['id'], '--raw', '--itemid', bw_item.get_id(),
+                    args.bw_path, 'get', 'attachment', attachment['id'], '--raw', '--itemid', bw_item.get_id(),
                     '--session', args.bw_session,
                 ])
                 attachment_id = kp.add_binary(attachment_raw)
@@ -171,8 +171,8 @@ def check_args(args):
             logging.error('Key File for KeePass database is not readable.')
             return False
 
-    if not os.path.isfile(BW_PATH) or not os.access(BW_PATH, os.X_OK):
-        logging.error('bitwarden-cli was not found or not executable. Make sure bw-cli is installed and in PATH.')
+    if not os.path.isfile(args.bw_path) or not os.access(args.bw_path, os.X_OK):
+        logging.error('bitwarden-cli was not found or not executable. Did you set correct \'--bw-path\'?')
         return False
 
     return True
@@ -200,6 +200,11 @@ parser.add_argument(
     '--database-keyfile',
     help='Path to Key File for KeePass database',
     default=os.environ.get('DATABASE_KEYFILE', None),
+)
+parser.add_argument(
+    '--bw-path',
+    help='Path for bw binary',
+    default=os.environ.get('BW_PATH', 'bw'),
 )
 args = parser.parse_args()
 
