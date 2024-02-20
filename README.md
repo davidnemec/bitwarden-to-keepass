@@ -7,7 +7,7 @@ This repository is a fork of [davidnemec/bitwarden-to-keepass](https://github.co
 
 They did all of the work, I just added the custom URL functionality and created a Docker repository. All props to [davidnemec](https://github.com/davidnemec/)!
 
-## How it works?
+## How does it works?
 It uses the official [bitwarden-cli](https://bitwarden.com/help/article/cli/) client to export your items from the Bitwarden vault and move them into your KeePass database - that includes logins (with TOTP seeds, URIs, custom fields, attachments, notes) and secure notes.
 
 ## Usage 
