@@ -1,32 +1,32 @@
 # bitwarden-to-keepass
-Export (most of) your Bitwarden items into KeePass database.
+Export (most of) your Bitwarden items into a KeePass database.
 
 ## Fork information
 
 This repository is a fork of [davidnemec/bitwarden-to-keepass](https://github.com/davidnemec/bitwarden-to-keepass). 
 
-They did all of the work, I just added the custom URL functionality and created a docker repository. All props to [davidnemec](https://github.com/davidnemec/)!
+They did all of the work, I just added the custom URL functionality and created a Docker repository. All props to [davidnemec](https://github.com/davidnemec/)!
 
 ## How it works?
-It uses official [bitwarden-cli](https://bitwarden.com/help/article/cli/) client to export your items from Bitwarden vault and move them into your KeePass database - that includes logins (with TOTP seeds, URIs, custom fields, attachments, notes) and secure notes.
+It uses the official [bitwarden-cli](https://bitwarden.com/help/article/cli/) client to export your items from the Bitwarden vault and move them into your KeePass database - that includes logins (with TOTP seeds, URIs, custom fields, attachments, notes) and secure notes.
 
-# Usage 
+## Usage 
 
-## Environment variables available
+### Environment variables available
 
 - `DATABASE_PASSWORD` (required): The password you want your KeePass file to have.
-- `DATABASE_NAME` (optional): The name you want your KeePass file t o have. If not set, it will default to `bitwarden.kdbx`
-- `BITWARDEN_URL` (optional): A custom BitWarden/VaultWarden instance. If you are ussing the official https://bitwarden.com, you can leave this blank.
+- `DATABASE_NAME` (optional): The name you want your KeePass file to have. If not set, it will default to `bitwarden.kdbx`.
+- `BITWARDEN_URL` (optional): A custom Bitwarden/Vaultwarden instance. If you are using the official https://bitwarden.com, you can leave this blank.
 
-## Backup location
+### Backup location
 
-All backups will be written on `/exports`. You need to mount that volume locally in order to retrieve the backup file.
+All backups will be written to `/exports`. You need to mount that volume locally in order to retrieve the backup file.
 
-## Docker command
+### Docker command
 
 In your terminal, run:
 
-``` sh
+```sh
 $ docker run --rm -it \
      -e DATABASE_PASSWORD=123 \
      -e DATABASE_NAME="my-cool-bitwarden-backup.kdbx" \
@@ -36,8 +36,8 @@ $ docker run --rm -it \
 ```
 
 **The `--rm --it` is important!** Why?
-- `--rm`: The docker container will delete itself after it runs. This ensures no config leaking.
-- `-it` The script will ask you your credentials, so docker has to run interactively.
+- `--rm`: The Docker container will delete itself after it runs. This ensures no config leaking.
+- `-it`: The script will ask for your credentials, so Docker has to run interactively.
 
 First, the script will ask for your username:
 
@@ -45,7 +45,7 @@ First, the script will ask for your username:
 $ Email address: your@email.com
 ```
 
-Then, your master password. The input is hidden, so it won't leak on your terminal:
+Then, your master password. The input is hidden, so it won't be visible on your terminal:
 
 ``` sh
 $ Master password: [input is hidden]
@@ -57,7 +57,7 @@ Finally, if you have 2FA enabled, it will ask for your 2FA code:
 $ Two-step login code: 123456
 ```
 
-And I'll start converting your passwords into Keepass! You'll see something simmilar to this:
+And it'll start converting your passwords into KeePass! You'll see something similar to this:
 
 ``` sh
 Generating KeePass file /exports/my-cool-bitwarden-backup.kdbx
@@ -68,7 +68,7 @@ Generating KeePass file /exports/my-cool-bitwarden-backup.kdbx
 2024-02-20 15:13:43 :: INFO :: Export completed.
 ```
 
-In the end, the script will lock and log out from your account:
+In the end, the script will lock your vault and log out of your account:
 
 ``` sh
 Your vault is locked.
@@ -76,16 +76,15 @@ KeePass file /exports/my-cool-bitwarden-backup.kdbx generated successfully
 You have logged out.
 ```
 
-And you can see your file in your mounted directory!
+And you can find your file in your mounted directory!
 
 ``` sh
 $ ls exports
 my-cool-bitwarden-backup.kdbx
 ```
 
-
-# FAQ
+## FAQ
 
 - Why can't I keep my session open?
 
-Basically, security reasons. I preffer the docker container to ask for my credentials each time and not save them.
+  Basically, for security reasons. I prefer the Docker container to ask for my credentials each time and not save them.
