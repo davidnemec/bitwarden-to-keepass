@@ -3,7 +3,6 @@ import logging
 import os
 import re
 import subprocess
-from datetime import datetime
 
 from argparse import ArgumentParser
 from typing import Dict, List, Optional
@@ -24,17 +23,13 @@ logging.basicConfig(
 
 kp: Optional[PyKeePass] = None
 
-NOW = datetime.now().strftime('%Y-%m-%d-%s')
-DATABASE_PATH = f'/exports/vaultwarden-{NOW}.kdbx'
-
-
 def bitwarden_to_keepass(args):
     global kp
     try:
-        kp = PyKeePass(DATABASE_PATH, password=args.database_password, keyfile=args.database_keyfile)
+        kp = PyKeePass(args.database_path, password=args.database_password, keyfile=args.database_keyfile)
     except FileNotFoundError:
         logging.info('KeePass database does not exist, creating a new one.')
-        kp = create_database(DATABASE_PATH, password=args.database_password, keyfile=args.database_keyfile)
+        kp = create_database(args.database_path, password=args.database_password, keyfile=args.database_keyfile)
     except CredentialsError as e:
         logging.error(f'Wrong password for KeePass database: {e}')
         return
@@ -190,6 +185,11 @@ parser.add_argument(
     '--bw-session',
     help='Session generated from bitwarden-cli (bw login)',
     **environ_or_required('BW_SESSION'),
+)
+parser.add_argument(
+    '--database-path',
+    help='Path to KeePass database. If database does not exists it will be created.',
+    **environ_or_required('DATABASE_PATH'),
 )
 parser.add_argument(
     '--database-password',

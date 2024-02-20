@@ -10,9 +10,12 @@ export BW_SESSION
 BW_PATH="$(which bw)"
 export BW_PATH
 
+DATABASE_PATH="/exports/$DATABASE_NAME"
+export DATABASE_PATH
+
 # Convert the VaultWarden data to a KeePass file
 bw sync
 python3 bitwarden-to-keepass.py
 bw lock
 
-echo "KeePass file created successfully!"
+echo "KeePass file $DATABASE_NAME generated successfully"
