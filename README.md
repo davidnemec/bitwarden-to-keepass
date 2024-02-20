@@ -8,6 +8,7 @@ It uses official [bitwarden-cli](https://bitwarden.com/help/article/cli/) client
 - Clone this repository
 - Edit `.env` file
   - ⚠️ make sure to set your own `DATABASE_PASSWORD` - used as password for KeePass database
+  - If you are using a custom Bitwarden instance, set the URL in `BITWARDEN_URL`
 - Run
 ```
 docker-compose run bitwarden-to-keepass
