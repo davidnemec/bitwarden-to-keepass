@@ -3,7 +3,7 @@ services:
   bitwarden-to-keepass:
     build: .
     command: >
-      bash -c 'export BW_SESSION=`$BW_PATH login --raw || $BW_PATH unlock --raw`
+      bash -c '$BW_PATH config server $BITWARDEN_URL && export BW_SESSION=`$BW_PATH login --raw || $BW_PATH unlock --raw`
       && $BW_PATH sync
       && python3 bitwarden-to-keepass.py
       && $BW_PATH lock'
