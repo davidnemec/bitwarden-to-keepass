@@ -126,7 +126,7 @@ def set_kp_entry_urls(entry: KPEntry, urls: List[str]) -> None:
                     entry.url = url
                 else:
                     extra_urls += 1
-                    entry.set_custom_property(f'URL_{extra_urls}', url)
+                    entry.set_custom_property(f'KP2A_URL_{extra_urls}', url)
 
 
 def load_folders(folders) -> Dict[str, KPGroup]:
