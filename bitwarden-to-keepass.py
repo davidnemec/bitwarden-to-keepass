@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import subprocess
+import sys
 
 from argparse import ArgumentParser
 from typing import Dict, List, Optional
@@ -11,6 +12,8 @@ from pykeepass import PyKeePass, create_database
 from pykeepass.exceptions import CredentialsError
 from pykeepass.group import Group as KPGroup
 from pykeepass.entry import Entry as KPEntry
+
+from getpass import getpass
 
 import folder as FolderType
 from item import Item, ItemType, CustomFieldType
@@ -161,16 +164,20 @@ def load_folders(folders) -> Dict[str, KPGroup]:
 
 
 def check_args(args):
+    if not args.database_password:
+        args.database_password = getpass('Enter the database password (will not display): ')
+
+    if not args.database_password:
+        raise RuntimeError('A database password must be supplied.')
+
     if args.database_keyfile:
         if not os.path.isfile(args.database_keyfile) or not os.access(args.database_keyfile, os.R_OK):
-            logging.error('Key File for KeePass database is not readable.')
-            return False
+            raise RuntimeError('Key File for KeePass database is not readable.')
 
     if not os.path.isfile(args.bw_path) or not os.access(args.bw_path, os.X_OK):
-        logging.error('bitwarden-cli was not found or not executable. Did you set correct \'--bw-path\'?')
-        return False
+        raise RuntimeError('bitwarden-cli was not found or not executable. Did you set correct \'--bw-path\'?')
 
-    return True
+    return args
 
 
 def environ_or_required(key):
@@ -194,7 +201,7 @@ parser.add_argument(
 parser.add_argument(
     '--database-password',
     help='Password for KeePass database',
-    **environ_or_required('DATABASE_PASSWORD'),
+    default=os.environ.get('DATABASE_PASSWORD', None),
 )
 parser.add_argument(
     '--database-keyfile',
@@ -208,4 +215,9 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-check_args(args) and bitwarden_to_keepass(args)
+try:
+    check_args(args)
+    bitwarden_to_keepass(args)
+except RuntimeError as error:
+    print(error)
+    sys.exit(1)
