@@ -12,9 +12,9 @@ RUN apt-get update && \
     rm -rf bw.zip
 
 WORKDIR /bitwarden-to-keepass
-COPY requirements.txt ./
+COPY pyproject.toml poetry.lock ./
 
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir poetry && \
+    poetry install
 
 COPY . .
