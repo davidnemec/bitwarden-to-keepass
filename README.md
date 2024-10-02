@@ -6,14 +6,19 @@ It uses official [bitwarden-cli](https://bitwarden.com/help/article/cli/) client
 
 # Usage with docker (docker-compose) - recommended
 - Clone this repository
-- Edit `.env` file
-  - ⚠️ make sure to set your own `DATABASE_PASSWORD` - used as password for KeePass database
-  - If you are using a custom Bitwarden instance, set the URL in `BITWARDEN_URL`
 - Run
 ```
 docker-compose run bitwarden-to-keepass
 ```
-- You will be interactively asked to login with [bitwarden-cli](https://bitwarden.com/help/article/cli/)
+- You will be interactively asked to:
+  - login to your vault with [bitwarden-cli](https://bitwarden.com/help/article/cli/)
+  - and choose KeePass database password
+
+## Optional
+- You can edit `.env` and pre-set some options
+  - `DATABASE_PASSWORD` - string, used as password for KeePass database
+  - `DATABASE_KEYFILE` - path, used as keyfile password for KeePass database
+  - `BITWARDEN_URL` - URL, used in case of self-hosted instances or bitwarden.eu
 - After the process is finished your database export is in `exports` directory
 
 ## Usage without docker (venv)
