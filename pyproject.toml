@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Export (most of) your Bitwarden items into KeePass (kdbx) database. That includes logins - with TOTP seeds, URIs, custom fields, attachments and secure notes."
 authors = ["David Němec <david@nemec.co>"]
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.12"
