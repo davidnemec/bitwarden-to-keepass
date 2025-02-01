@@ -1,4 +1,5 @@
 import collections
+import re
 from collections.abc import Callable
 from typing import Optional
 
@@ -71,3 +72,44 @@ def bfs_traverse_execute(
         child: Folder = queue.popleft()
         queue.extend(child.children)
         callback(kp, child)
+
+
+def load_folders(kp: PyKeePass, folders: list[dict]) -> dict[str, KPGroup]:
+    # sort folders so that in the case of nested folders
+    # the parents would be guaranteed to show up before the children
+    folders.sort(key=lambda x: x["name"])
+
+    # dict to store mapping of Bitwarden folder id to keepass group
+    groups_by_id: dict[str | None, KPGroup] = {}
+
+    # build up folder tree
+    folder_root: Folder = Folder(None)
+    folder_root.keepass_group = kp.root_group
+    groups_by_id[None] = kp.root_group
+
+    for folder in folders:
+        if folder["id"] is not None:
+            new_folder: Folder = Folder(folder["id"])
+            # regex lifted from https://github.com/bitwarden/jslib/blob/ecdd08624f61ccff8128b7cb3241f39e664e1c7f/common/src/services/folder.service.ts#L108
+            folder_name_parts: list[str] = re.sub(
+                r"^\/+|\/+$",
+                "",
+                folder["name"],
+            ).split("/")
+            nested_traverse_insert(
+                folder_root,
+                folder_name_parts,
+                new_folder,
+                "/",
+            )
+
+    # create keepass groups based off folder tree
+    def add_keepass_group(kp: PyKeePass, folder: Folder) -> None:
+        parent_group: KPGroup = folder.parent.keepass_group
+        new_group: KPGroup = kp.add_group(parent_group, folder.name)
+        folder.keepass_group = new_group
+        groups_by_id[folder.id] = new_group
+
+    bfs_traverse_execute(kp, folder_root, add_keepass_group)
+
+    return groups_by_id
