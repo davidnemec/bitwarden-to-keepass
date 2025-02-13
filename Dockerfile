@@ -2,7 +2,7 @@ FROM python:3.12-slim-bookworm
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends wget unzip && \
-    wget -O "bw.zip" "https://vault.bitwarden.com/download/?app=cli&platform=linux" && \
+    wget -O "bw.zip" "https://github.com/bitwarden/clients/releases/download/cli-v2024.6.0/bw-linux-2024.6.0.zip" && \
     unzip bw.zip && \
     chmod +x ./bw && \
     mv ./bw /usr/local/bin/bw && \
