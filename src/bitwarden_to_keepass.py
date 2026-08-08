@@ -14,6 +14,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s :: %(levelname)s :: %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
+    force=True,
 )
 
 
@@ -112,11 +113,8 @@ def bitwarden_to_keepass(args: Namespace) -> None:
                 entry.add_attachment(attachment_id, attachment["fileName"])
 
         except Exception as e:
-            logging.warning(
-                "Skipping item named %s because of this error: %s",
-                item["name"],
-                e,
-            )
+            logging.warning("Skipping item named %s due to the following error: %r", item["name"], e)
+            logging.warning("Offending object:\n%s", json.dumps(item, indent=4, sort_keys=True))
             continue
 
     logging.info("Saving changes to KeePass database.")

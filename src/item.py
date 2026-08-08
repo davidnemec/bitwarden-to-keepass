@@ -20,16 +20,19 @@ class Item:
         self.item = item
 
     def get_id(self) -> str:
-        return self.item["id"]
+        return self.item.get("id", "")
 
     def get_name(self) -> str:
-        return self.item["name"]
+        return self.item.get("name", "")
 
     def get_folder_id(self) -> str:
-        return self.item["folderId"]
+        return self.item.get("folderId", "")
 
     def get_username(self) -> str:
         if "login" not in self.item:
+            return ""
+
+        if "username" not in self.item["login"]:
             return ""
 
         return self.item["login"]["username"] if self.item["login"]["username"] else ""
@@ -38,10 +41,13 @@ class Item:
         if "login" not in self.item:
             return ""
 
+        if "password" not in self.item["login"]:
+            return ""
+
         return self.item["login"]["password"] if self.item["login"]["password"] else ""
 
     def get_notes(self) -> str:
-        return self.item["notes"]
+        return self.item.get("notes", "")
 
     def get_uris(self) -> list:
         if "login" not in self.item or "uris" not in self.item["login"]:
@@ -73,6 +79,9 @@ class Item:
         if "login" not in self.item:
             return None, None
 
+        if "totp" not in self.item["login"]:
+            return None, None
+
         if not self.item["login"]["totp"]:
             return None, None
 
@@ -83,3 +92,6 @@ class Item:
         secret = params.get("secret", self.item["login"]["totp"])
 
         return secret, f"{period};{digits}"
+
+    def get_dict(self) -> dict:
+        return self.item
